@@ -1,9 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-echo "=== INSTALL SCRIPT FOR SMS-SPAM WEB ==="
+echo "=== INSTALL SCRIPT FOR SMS-SPAM WEB (Ninja Edition) ==="
 
 # -----------------------------
-# ตรวจ Python
+# 1. ตรวจ Python
 # -----------------------------
 if ! command -v python >/dev/null 2>&1; then
     echo "[*] ไม่พบ Python -> กำลังติดตั้ง..."
@@ -14,66 +14,69 @@ else
 fi
 
 # -----------------------------
-# ตรวจ pip
+# 2. ตรวจ pip
 # -----------------------------
 if ! command -v pip >/dev/null 2>&1; then
     echo "[*] ไม่พบ pip -> กำลังติดตั้ง..."
-    pkg install python -y
+    # ปกติ pip มาพร้อม python แต่กันเหนียว
+    pkg install python-pip -y 
 else
     echo "[OK] พบ pip แล้ว"
 fi
 
 # -----------------------------
-# ติดตั้ง dependencies จาก pip-install.json
+# 3. ติดตั้ง dependencies จาก requirements.txt
 # -----------------------------
-JSON_FILE="pip-install.json"
-if [ ! -f "$JSON_FILE" ]; then
-    echo "[!] ไม่พบไฟล์ pip-install.json"
+REQ_FILE="requirements.txt"
+
+if [ ! -f "$REQ_FILE" ]; then
+    echo "[!] ไม่พบไฟล์ $REQ_FILE"
+    echo "[!] กรุณาสร้างไฟล์ requirements.txt ไว้ในโฟลเดอร์เดียวกัน"
     exit 1
 fi
 
-echo "[*] กำลังติดตั้ง dependencies จาก pip-install.json..."
-while read -r package; do
-    if [ -n "$package" ]; then
-        echo "  -> pip install $package"
-        pip install "$package"
-    fi
-done < <(jq -r '.[]' pip-install.json)
+echo "[*] กำลังติดตั้ง dependencies จาก $REQ_FILE..."
+pip install -r "$REQ_FILE"
 
-echo "[OK] ติดตั้ง dependencies เรียบร้อย"
+if [ $? -eq 0 ]; then
+    echo "[OK] ติดตั้ง dependencies เรียบร้อย"
+else
+    echo "[!] เกิดข้อผิดพลาดในการติดตั้ง dependencies"
+    exit 1
+fi
 
 # -----------------------------
-# ติดตั้งคำสั่ง RUN-SMS-WEB
+# 4. ติดตั้งคำสั่ง RUN-SMS-WEB
 # -----------------------------
 TARGET="$PREFIX/bin/RUN-SMS-WEB"
 SOURCE="SMS-RUN-WEB-TERMUX.sh"
 
 if [ ! -f "$SOURCE" ]; then
-    echo "[!] ไม่พบไฟล์ $SOURCE"
-    exit 1
+    echo "[!] ไม่พบไฟล์ $SOURCE สำหรับสร้างคำสั่งรัน"
+    # ไม่ exit เพราะอาจจะแค่อยากลง library
+else
+    echo "[*] กำลังติดตั้งคำสั่ง RUN-SMS-WEB ..."
+    mv "$SOURCE" "$TARGET"
+    chmod +x "$TARGET"
+    echo "[OK] ติดตั้งคำสั่ง RUN-SMS-WEB สำเร็จ!"
 fi
 
-echo "[*] กำลังติดตั้งคำสั่ง RUN-SMS-WEB ..."
-mv "$SOURCE" "$TARGET"
-chmod +x "$TARGET"
-
-echo "[OK] ติดตั้งคำสั่ง RUN-SMS-WEB สำเร็จ!"
-
 # -----------------------------
-# ลบไฟล์ติดตั้งอัตโนมัติ
+# 5. ลบไฟล์ติดตั้งอัตโนมัติ (Cleanup)
 # -----------------------------
 echo "[*] ลบไฟล์ติดตั้ง..."
 rm -f install-termux.sh
-rm -f pip-install.json
+rm -f requirements.txt
 rm -f README.md
 rm -f example.jpg
 
 echo "[OK] ลบไฟล์ติดตั้งเรียบร้อย!"
 sleep 0.5
-echo "[OK] ติดตั้งเรียบร้อย"
+echo "[OK] ติดตั้งระบบเสร็จสมบูรณ์"
 sleep 1
+
 # ========================================================
-# ส่วนที่เพิ่มใหม่: หน้าจอคำอธิบายและขอบคุณ
+# ส่วนแสดงผล UI (คงไว้ตามเดิมที่คุณนินจาทำมา)
 # ========================================================
 
 # 1. หน้าจอคำอธิบาย โปรดอ่าน
@@ -127,5 +130,5 @@ echo "      - ยิงแบบช้า: python SMS-Slow.py"
 echo ""
 echo "================================================="
 sleep 1
-echo "[OK] ติดตั้งเรียบร้อย"
+echo "[OK] พร้อมใช้งานแล้ว"
 echo "================================================="
