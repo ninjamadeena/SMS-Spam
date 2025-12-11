@@ -92,7 +92,7 @@
         .then(data => {
             if (data.status === 'success') {
                 if (logInterval) clearInterval(logInterval);
-                logInterval = setInterval(fetchLogs, 1000);
+                logInterval = setInterval(fetchLogs, 150);
             } else {
                 alert(data.message);
             }
