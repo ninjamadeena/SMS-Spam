@@ -18,3 +18,5 @@ bash install-termux.sh
 ```
 RUN-SMS-WEB
 ```
+แล้วเข้า
+http://127.0.0.1:8080
