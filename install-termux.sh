@@ -69,6 +69,7 @@ rm -f install-termux.sh
 rm -f requirements.txt
 rm -f README.md
 rm -f example.jpg
+rm -f .git
 
 echo "[OK] ลบไฟล์ติดตั้งเรียบร้อย!"
 sleep 0.5
