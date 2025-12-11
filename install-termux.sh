@@ -66,6 +66,7 @@ echo "[*] ลบไฟล์ติดตั้ง..."
 rm -f install-termux.sh
 rm -f pip-install.json
 rm -f README.md
+rm -f photo.jpg
 
 echo "[OK] ลบไฟล์ติดตั้งเรียบร้อย!"
 sleep 0.5
