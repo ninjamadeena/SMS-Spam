@@ -3,7 +3,7 @@
 ![Demo Screenshot](example.jpg)
 ## 📥 วิธีติดตั้งใน termux
 ```
-pkg install git
+pkg install git -y
 ```
 ```
 git clone https://github.com/ninjamadeena/SMS-Spam.git
