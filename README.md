@@ -14,3 +14,7 @@ cd SMS-Spam
 ```
 bash install-termux.sh
 ```
+รันใช้
+```
+RUN-SMS-WEB
+```
