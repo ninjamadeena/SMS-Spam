@@ -35,7 +35,7 @@ def run_script(script_path, phone, count):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            bufsize=0.5
+            bufsize=1
         )
 
         # ส่ง input เข้าไฟล์ Python
