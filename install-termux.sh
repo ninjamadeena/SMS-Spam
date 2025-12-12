@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-echo "=== INSTALL SCRIPT FOR SMS-SPAM WEB (Ninja Edition) ==="
+echo "=== INSTALL SCRIPT FOR SMS-SPAM WEB ==="
 
 # -----------------------------
 # 1. ตรวจ Python
