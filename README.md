@@ -11,6 +11,9 @@
 
 หากคุณใช้งานโปรแกรมนี้ ถือว่าคุณยอมรับเงื่อนไขดังกล่าวแล้ว
 
+### 🇬🇧 Disclaimer
+This tool is for **educational purposes only**. The developer is not responsible for any misuse or damage caused by this program.
+
 ## 🖼️ ภาพตัวอย่าง
 ![Demo Screenshot](example.jpg)
 ## 📥 วิธีติดตั้งใน termux
