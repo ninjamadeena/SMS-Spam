@@ -18,20 +18,10 @@ This tool is for **educational purposes only**. The developer is not responsible
 ![Demo Screenshot](example.jpg)
 ## 📥 วิธีติดตั้งใน termux
 ```
-pkg install git -y
+pkg install git -y && git clone https://github.com/ninjamadeena/SMS-Spam.git && cd SMS-Spam && bash install-termux.sh && cd
 ```
-```
-git clone https://github.com/ninjamadeena/SMS-Spam.git
-```
-```
-cd SMS-Spam
-```
-```
-bash install-termux.sh
-```
-รันใช้
+## รันใช้
 ```
 RUN-SMS-WEB
 ```
-แล้วเข้า
-http://127.0.0.1:8080 ต้องรัน RUN-SMS-WEB ก่อนเท่านั้นถึงจะเข้าได้❗❗
+### แล้วเข้า http://127.0.0.1:8080 ต้องรัน RUN-SMS-WEB ก่อนเท่านั้นถึงจะเข้าได้❗
