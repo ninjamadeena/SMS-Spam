@@ -29,8 +29,8 @@ if [ "$LOCAL" != "$REMOTE" ]; then
     sleep 2
     
     # เรียกใช้ไฟล์ update.py ใน folder program
-    if [ -f "program/update.py" ]; then
-        python program/update.py
+    if [ -f "program/update.sh" ]; then
+        bash program/update.sh
         
         # หลังอัปเดตเสร็จ ให้จบการทำงานสคริปต์นี้ เพื่อให้ User รันใหม่ 
         # (หรือจะให้รันต่อเลยก็ได้ แต่แนะนำให้รันใหม่เผื่อ Environment เปลี่ยน)
