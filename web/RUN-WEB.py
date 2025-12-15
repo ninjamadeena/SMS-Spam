@@ -16,12 +16,12 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # โฟลเดอร์ program ที่อยู่ระดับบน
 PROGRAM_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "program"))
 
-# ฟังก์ชันสร้าง path ของไฟล์ SMS (เพิ่มโหมด super เข้าไป)
+# ฟังก์ชันสร้าง path ของไฟล์ SMS
 def get_script_path(mode):
     if mode == "fast":
         filename = "SMS-Fast.py"
     elif mode == "super":
-        filename = "SMS-SUPER.py" # <--- เพิ่มตรงนี้
+        filename = "SMS-Super.py"
     else:
         filename = "SMS-Slow.py"
     
