@@ -3,86 +3,200 @@
 <head>
     <link rel="icon" href="{{ url_for('static', filename='favicon.jpg') }}" type="image/jpeg" />
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>💻 SMS Spam Control Panel</title>
     <style>
         body {
             background: #0d0d0d;
             color: white;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             text-align: center;
-            margin-top: 50px;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
         }
         .panel {
             background: #161616;
             padding: 25px;
-            width: 400px;
-            margin: auto;
+            width: 100%;
+            max-width: 500px; /* ขยายความกว้างนิดหน่อยให้อ่านง่าย */
             border-radius: 12px;
-            box-shadow: 0 0 15px #000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            border: 1px solid #333;
         }
+        h2 { margin-top: 0; color: #fff; }
+        
+        /* Input Styles */
         input {
-            width: 90%;
-            padding: 10px;
-            margin: 10px 0;
-            font-size: 17px;
+            width: calc(100% - 24px);
+            padding: 12px;
+            margin: 8px 0;
+            font-size: 16px;
             border-radius: 8px;
-            border: none;
+            border: 1px solid #333;
             background: #222;
             color: white;
+            outline: none;
+            transition: 0.3s;
+        }
+        input:focus { border-color: #0078ff; box-shadow: 0 0 8px rgba(0, 120, 255, 0.3); }
+
+        /* Button Group */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
         }
         button {
-            width: 45%;
+            flex: 1;
             padding: 12px;
-            margin-top: 10px;
-            font-size: 18px;
+            font-size: 14px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             color: white;
             font-weight: bold;
+            transition: transform 0.2s, opacity 0.2s;
         }
-        .fast { background-color: #0078ff; }
-        .slow { background-color: #ff0033; }
-        button:hover { opacity: .85; }
+        button:active { transform: scale(0.95); }
+        button:hover { opacity: 0.9; }
 
+        .fast { background: linear-gradient(45deg, #0078ff, #00c6ff); box-shadow: 0 4px 10px rgba(0, 120, 255, 0.3); }
+        .super { background: linear-gradient(45deg, #8a2be2, #da70d6); box-shadow: 0 4px 10px rgba(138, 43, 226, 0.3); }
+        .slow { background: linear-gradient(45deg, #ff0033, #ff6b6b); box-shadow: 0 4px 10px rgba(255, 0, 51, 0.3); }
+
+        /* Log Box */
         #log-container {
             margin-top: 20px;
             background: #000;
-            color: #0f0;
+            color: #00ff41;
             font-family: 'Courier New', monospace;
             padding: 15px;
-            height: 200px;
+            height: 180px;
             overflow-y: auto;
             border-radius: 8px;
             text-align: left;
             border: 1px solid #333;
-            font-size: 14px;
+            font-size: 12px;
+            white-space: pre-wrap;
         }
+
+        /* Info Section (ส่วนที่เพิ่มใหม่) */
+        .info-header { margin-top: 25px; margin-bottom: 10px; font-size: 14px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            text-align: left;
+        }
+        @media (min-width: 480px) {
+            .info-grid { grid-template-columns: 1fr 1fr 1fr; } /* จอใหญ่แบ่ง 3 ช่อง */
+        }
+
+        .info-box {
+            background: #202020;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            color: #ccc;
+            border-top: 3px solid #555;
+            line-height: 1.4;
+        }
+        .info-box h3 { margin: 0 0 5px 0; font-size: 13px; color: #fff; }
+        .info-box.i-fast { border-color: #0078ff; }
+        .info-box.i-super { border-color: #8a2be2; }
+        .info-box.i-slow { border-color: #ff0033; }
+
+        .badge { display: inline-block; padding: 2px 5px; border-radius: 3px; font-size: 9px; font-weight: bold; margin-bottom: 5px;}
+        .risk-high { background: rgba(255, 0, 0, 0.2); color: #ff5555; }
+        .risk-med { background: rgba(138, 43, 226, 0.2); color: #d896ff; }
+        .risk-low { background: rgba(0, 255, 0, 0.1); color: #55ff55; }
+
     </style>
 </head>
 <body>
+
 <div class="panel">
     <h2>🔥 SMS Spam Control Panel</h2>
+    
     <div>
-        <input type="text" id="phone" placeholder="เบอร์โทร (10 หลัก)" required>
-        <input type="number" id="count" placeholder="จำนวนครั้ง" required>
-        <br>
-        <button class="fast" onclick="startSpam('fast')">ยิงเร็ว ⚡</button>
-        <button class="slow" onclick="startSpam('slow')">ยิงช้า 🐢</button>
+        <input type="text" id="phone" placeholder="เบอร์โทรศัพท์ (ไม่ต้องใส่ขีด)" required maxlength="10">
+        <input type="number" id="count" placeholder="จำนวนที่จะยิง" required>
+        
+        <div class="btn-group">
+            <button class="fast" onclick="startSpam('fast')">⚡ ยิงเร็ว</button>
+            <button class="super" onclick="startSpam('super')">🔥 ยิงรัว</button>
+            <button class="slow" onclick="startSpam('slow')">🐢 ยิงช้า</button>
+        </div>
     </div>
-    <div id="log-container">รอคำสั่ง...</div>
+
+    <div id="log-container"> >> รอคำสั่งทำงาน...</div>
+
+    <div class="info-header">🔍 รายละเอียดโหมดการทำงาน</div>
+    <div class="info-grid">
+        <div class="info-box i-fast">
+            <h3>⚡ โหมดเร็ว (Fast)</h3>
+            <span class="badge risk-high">ความเสี่ยง: สูง 🔴</span>
+            <ul style="padding-left: 15px; margin: 5px 0;">
+                <li>ยิงรัวที่สุดโดยไม่รอผลตอบกลับ</li>
+                <li>ใช้ Asyncio (ยิงขนานกัน)</li>
+                <li><b>ข้อดี:</b> เร็วมาก กระหน่ำ SMS</li>
+                <li><b>ข้อเสีย:</b> โดนแบน IP ง่ายมาก และอาจทำให้เน็ตค้าง</li>
+            </ul>
+        </div>
+
+        <div class="info-box i-super">
+            <h3>🔥 โหมดรัว (Super)</h3>
+            <span class="badge risk-med">ความเสี่ยง: ปานกลาง 🟡</span>
+            <ul style="padding-left: 15px; margin: 5px 0;">
+                <li><b>แนะนำ!</b> ระบบอัจฉริยะ</li>
+                <li>การันตีความสำเร็จตามเป้า</li>
+                <li>ตัด API ที่เสียทิ้งอัตโนมัติ</li>
+                <li><b>ข้อดี:</b> แม่นยำ ไม่เสียเวลายิงตัวที่ตายแล้ว</li>
+            </ul>
+        </div>
+
+        <div class="info-box i-slow">
+            <h3>🐢 โหมดช้า (Slow)</h3>
+            <span class="badge risk-low">ความเสี่ยง: ต่ำ 🟢</span>
+            <ul style="padding-left: 15px; margin: 5px 0;">
+                <li>ยิงแบบใจเย็น มีดีเลย์กั้น</li>
+                <li>เหมือนคนกดเองมากที่สุด</li>
+                <li><b>ข้อดี:</b> ปลอดภัย โอกาสโดนแบนน้อย</li>
+                <li><b>ข้อเสีย:</b> ช้ามาก เหมาะกับเปิดทิ้งไว้ยาวๆ</li>
+            </ul>
+        </div>
+    </div>
 </div>
+
 <script>
     let logInterval;
+    
     function startSpam(mode) {
         const phone = document.getElementById('phone').value;
         const count = document.getElementById('count').value;
         const logBox = document.getElementById('log-container');
-        if (!phone || !count) {
-            alert("กรุณากรอกข้อมูลให้ครบ!");
+        
+        // Validation ง่ายๆ
+        if (!phone || phone.length < 9) {
+            alert("❌ กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง");
             return;
         }
-        logBox.innerHTML = "กำลังส่งคำสั่ง...";
+        if (!count) {
+            alert("❌ กรุณากรอกจำนวน");
+            return;
+        }
+        
+        let modeName = "";
+        let modeColor = "";
+        if(mode === 'fast') { modeName = "Fast ⚡"; modeColor = "#0078ff"; }
+        else if(mode === 'super') { modeName = "Super 🔥"; modeColor = "#8a2be2"; }
+        else { modeName = "Slow 🐢"; modeColor = "#ff0033"; }
+
+        logBox.innerHTML = `<span style="color:${modeColor}">[*] กำลังเริ่มระบบโหมด ${modeName}...</span>`;
+        logBox.scrollTop = logBox.scrollHeight;
+        
         fetch('/run', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -92,21 +206,36 @@
         .then(data => {
             if (data.status === 'success') {
                 if (logInterval) clearInterval(logInterval);
-                logInterval = setInterval(fetchLogs, 500);
+                logInterval = setInterval(fetchLogs, 500); // อัปเดต Log ทุก 0.5 วิ
             } else {
-                alert(data.message);
+                alert("เกิดข้อผิดพลาด: " + data.message);
+                logBox.innerHTML += `\n[!] Error: ${data.message}`;
             }
+        })
+        .catch(err => {
+            logBox.innerHTML += "\n[!] Server Connection Error";
         });
     }
+    
     function fetchLogs() {
         fetch('/get_logs')
         .then(response => response.json())
         .then(logs => {
             const logBox = document.getElementById('log-container');
-            logBox.innerHTML = logs.join('<br>'); 
-            logBox.scrollTop = logBox.scrollHeight;
+            if(logs.length > 0) {
+                 // Join logs และเปลี่ยนสีคำว่า Error/Success เล็กน้อย
+                let formattedLogs = logs.map(line => {
+                    if(line.includes("Error") || line.includes("ตาย")) return `<span style="color:#ff5555">${line}</span>`;
+                    if(line.includes("สำเร็จ") || line.includes("Pass")) return `<span style="color:#55ff55">${line}</span>`;
+                    return line;
+                }).join('<br>');
+                
+                logBox.innerHTML = formattedLogs; 
+                logBox.scrollTop = logBox.scrollHeight;
+            }
         });
     }
 </script>
+
 </body>
 </html>
