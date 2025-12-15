@@ -1,3 +1,4 @@
+# web/RUN-WEB.py
 from flask import Flask, render_template, request, jsonify
 import subprocess
 import threading
@@ -15,32 +16,39 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # โฟลเดอร์ program ที่อยู่ระดับบน
 PROGRAM_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "program"))
 
-# ฟังก์ชันสร้าง path ของไฟล์ SMS
+# ฟังก์ชันสร้าง path ของไฟล์ SMS (เพิ่มโหมด super เข้าไป)
 def get_script_path(mode):
-    filename = "SMS-Fast.py" if mode == "fast" else "SMS-Slow.py"
+    if mode == "fast":
+        filename = "SMS-Fast.py"
+    elif mode == "super":
+        filename = "SMS-SUPER.py" # <--- เพิ่มตรงนี้
+    else:
+        filename = "SMS-Slow.py"
+    
     return os.path.join(PROGRAM_DIR, filename)
-
 
 def run_script(script_path, phone, count):
     global output_logs
     try:
         output_logs.clear()
         output_logs.append(f"[*] เริ่มรันไฟล์: {script_path}")
-        output_logs.append(f"[*] ส่งไปที่เบอร์: {phone}, จำนวน: {count}")
+        output_logs.append(f"[*] เป้าหมายเบอร์: {phone}, จำนวน: {count}")
 
-        # ใช้ python interpreter ตัวเดียวกับที่รัน Flask อยู่ (รองรับทุก OS)
+        # ใช้ python interpreter ตัวเดียวกับที่รัน Flask อยู่
         process = subprocess.Popen(
             [sys.executable, "-u", script_path],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            bufsize=1
+            bufsize=1,
+            cwd=PROGRAM_DIR # กำหนด path การรันให้อยู่ใน folder program เพื่อให้ import API_LIST ได้ชัวร์ๆ
         )
 
-        # ส่ง input เข้าไฟล์ Python
+        # ส่ง input เข้าไฟล์ Python (เบอร์ และ จำนวน)
         try:
-            process.stdin.write(f"{phone}\n{count}\n")
+            input_str = f"{phone}\n{count}\n"
+            process.stdin.write(input_str)
             process.stdin.flush()
         except Exception as e:
             output_logs.append(f"[!] Error sending input: {e}")
@@ -79,15 +87,15 @@ def run():
     if not phone or not count:
         return jsonify({"status": "error", "message": "ต้องใส่ข้อมูลให้ครบ!"})
 
-    # หา path ของไฟล์ให้ถูกตามทุก OS
+    # หา path ของไฟล์ให้ถูกตามโหมด
     script_path = get_script_path(mode)
 
     if not os.path.exists(script_path):
-        return jsonify({"status": "error", "message": f"ไม่พบไฟล์ {script_path}"})
+        return jsonify({"status": "error", "message": f"ไม่พบไฟล์ {script_path} \n(กรุณาเช็คว่ามีไฟล์ SMS-SUPER.py ในโฟลเดอร์ program หรือยัง)"})
 
     threading.Thread(target=run_script, args=(script_path, phone, count)).start()
 
-    return jsonify({"status": "success", "message": f"เริ่มรัน {script_path} แล้ว!"})
+    return jsonify({"status": "success", "message": f"เริ่มรันโหมด {mode.upper()} แล้ว!"})
 
 
 @app.route("/get_logs")
