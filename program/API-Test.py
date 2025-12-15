@@ -2,7 +2,7 @@
 import requests
 import time
 from concurrent.futures import ThreadPoolExecutor
-from API-LIST import API_CONFIG # Import การตั้งค่ามา
+from API_LIST import API_CONFIG # Import การตั้งค่ามา
 
 # พยายาม import colorama เพื่อความสวยงาม
 try:
