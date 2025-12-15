@@ -115,7 +115,7 @@ echo ""
 echo "📥 วิธีอัปเดต:"
 echo "ใช้คำสั่ง bash ~/SMS-Spam/program/update.sh"
 echo ""
-echo "🔍 ระบบทดสอบ API
+echo "🔍 ระบบทดสอบ API"
 echo "ใช้คำสั่ง python ~/SMS-Spam/program/API-Test.py"
 echo ""
 echo "-------------------------------------------------"
