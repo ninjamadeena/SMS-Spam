@@ -72,14 +72,14 @@ def shoot_api(phone, api_key):
             if response.status_code >= 400:
                 with lock:
                     if api_key not in banned_apis:
-                        print(f"💀 API {cfg['name']} ตาย (Status {response.status_code}) -> ตัดทิ้ง!")
+                        print(f"⚠️ API {cfg['name']} ตาย (Status {response.status_code}) -> ตัดทิ้ง!")
                         banned_apis.add(api_key)
 
     except Exception:
         # Timeout หรือ Error connection
         with lock:
             if api_key not in banned_apis:
-                # print(f"💀 API {cfg['name']} ไม่ตอบสนอง -> ตัดทิ้ง!") 
+                # print(f"⚠️ API {cfg['name']} ไม่ตอบสนอง -> ตัดทิ้ง!") 
                 banned_apis.add(api_key)
 
 # ==========================================
@@ -134,12 +134,12 @@ def start_super_spam(phone, target_amount):
     print(f"🏁 ภารกิจเสร็จสิ้นสมบูรณ์!")
     print(f"✅ ยอดสำเร็จ: {success_total}/{target_amount}")
     print(f"🔁 จำนวนครั้งที่พยายามยิงทั้งหมด: {attempt_count}")
-    print(f"💀 API ที่ถูกตัดทิ้ง: {len(banned_apis)}")
+    print(f"⚠️ API ที่ไม่สามารถใช้งานได้: {len(banned_apis)}")
     print("-" * 50)
 
 if __name__ == "__main__":
     try:
-        phone_input = input("📞 เบอร์โทรศัพท์: ")
+        phone_input = input("📱 เบอร์โทรศัพท์: ")
         clean_p = clean_phone(phone_input)
         
         if len(clean_p) != 10:
