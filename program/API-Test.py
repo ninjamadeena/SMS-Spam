@@ -1,10 +1,11 @@
-# program/API-Test.py
 import requests
 import time
-from concurrent.futures import ThreadPoolExecutor
-from API_LIST import API_CONFIG # Import การตั้งค่ามา
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from API_LIST import API_CONFIG
 
-# พยายาม import colorama เพื่อความสวยงาม
+# =========================
+# Color (optional)
+# =========================
 try:
     from colorama import Fore, Style, init
     init(autoreset=True)
@@ -12,90 +13,158 @@ try:
     RED = Fore.RED
     YELLOW = Fore.YELLOW
     CYAN = Fore.CYAN
+    MAGENTA = Fore.MAGENTA
     RESET = Style.RESET_ALL
 except ImportError:
-    GREEN = RED = YELLOW = CYAN = RESET = ""
+    GREEN = RED = YELLOW = CYAN = MAGENTA = RESET = ""
 
-def clean_phone(phone):
+# =========================
+# Utils
+# =========================
+def clean_phone(phone: str) -> str:
     phone = "".join(filter(str.isdigit, phone.strip()))
-    if phone.startswith("66"): return "0" + phone[2:]
-    if phone.startswith("+66"): return "0" + phone[3:]
+    if phone.startswith("+66"):
+        return "0" + phone[3:]
+    if phone.startswith("66"):
+        return "0" + phone[2:]
     return phone
 
-def run_test(api_key, api_data, phone):
-    start = time.time()
+# =========================
+# Response Classifier
+# =========================
+def classify_response(status: int, text: str) -> str:
+    t = (text or "").lower()
+
+    # Success
+    if status in (200, 201):
+        if any(k in t for k in ["otp", "success", "sent", "ส่งแล้ว"]):
+            return "PASS"
+        if any(k in t for k in ["limit", "too many", "rate"]):
+            return "RATE_LIMIT"
+        if any(k in t for k in ["block", "forbidden", "denied"]):
+            return "BLOCKED"
+        return "SOFT_BLOCK"   # 200 แต่ไม่ส่งจริง
+
+    # Client errors
+    if status == 429:
+        return "RATE_LIMIT"
+    if status in (401, 403):
+        return "BLOCKED"
+    if status in (404, 405):
+        return "ENDPOINT"
+
+    # Server errors
+    if status >= 500:
+        return "SERVER"
+
+    return "UNKNOWN"
+
+# =========================
+# Single API Test
+# =========================
+def run_test(api_data: dict, phone: str) -> dict:
     name = api_data["name"]
-    
-    # เตรียมข้อมูล
+    start = time.time()
+
     url = api_data["url"].format(phone=phone) if "{phone}" in api_data["url"] else api_data["url"]
-    headers = api_data["headers"]()
-    data_input = api_data["data"](phone) if api_data["data"] else None
-    
+    headers = api_data["headers"]() if api_data.get("headers") else {}
+    payload = api_data["data"](phone) if api_data.get("data") else None
+
     try:
-        kwargs = {"headers": headers, "timeout": 10}
-        if isinstance(data_input, dict):
-            kwargs["json"] = data_input
-        elif isinstance(data_input, str):
-            kwargs["data"] = data_input
-        
-        # ส่ง Request
-        response = requests.request(api_data["method"], url, **kwargs)
-        latency = (time.time() - start) * 1000
-        
-        # เช็คผลลัพธ์
-        is_success = False
-        if response.status_code in (200, 201):
-            if api_data["success_check"](response.text):
-                is_success = True
-            elif len(response.text) < 500 and "error" not in response.text.lower():
-                # Fallback check
-                is_success = True
+        kwargs = {
+            "headers": headers,
+            "timeout": 10
+        }
+        if isinstance(payload, dict):
+            kwargs["json"] = payload
+        elif isinstance(payload, str):
+            kwargs["data"] = payload
 
-        if is_success:
-            print(f"{GREEN}[PASS]{RESET} {name:<15} | Ping: {latency:.0f}ms | Status: {response.status_code}")
-            return True
-        else:
-            print(f"{RED}[FAIL]{RESET} {name:<15} | Ping: {latency:.0f}ms | Status: {response.status_code}")
-            return False
+        resp = requests.request(api_data["method"], url, **kwargs)
+        latency = int((time.time() - start) * 1000)
 
-    except Exception as e:
-        print(f"{RED}[ERR ]{RESET} {name:<15} | Msg: {str(e)[:30]}")
-        return False
+        result = classify_response(resp.status_code, resp.text)
 
+        return {
+            "name": name,
+            "status": resp.status_code,
+            "latency": latency,
+            "result": result
+        }
+
+    except requests.exceptions.RequestException as e:
+        return {
+            "name": name,
+            "status": None,
+            "latency": None,
+            "result": "NETWORK",
+            "error": str(e)[:40]
+        }
+
+# =========================
+# Pretty Print
+# =========================
+def print_result(r: dict):
+    color = {
+        "PASS": GREEN,
+        "RATE_LIMIT": YELLOW,
+        "BLOCKED": RED,
+        "SOFT_BLOCK": MAGENTA,
+        "ENDPOINT": CYAN,
+        "SERVER": RED,
+        "NETWORK": RED,
+        "UNKNOWN": MAGENTA
+    }.get(r["result"], "")
+
+    status = r["status"] if r["status"] is not None else "--"
+    ping = f"{r['latency']}ms" if r["latency"] is not None else "--"
+
+    print(f"{color}[{r['result']:<10}]{RESET} {r['name']:<15} | Ping: {ping:<6} | Status: {status}")
+
+# =========================
+# Main
+# =========================
 def main():
     print(f"{CYAN}========================================{RESET}")
     print(f"{CYAN}       SMS API DIAGNOSTIC TOOL          {RESET}")
     print(f"{CYAN}       By: Ninja System                 {RESET}")
     print(f"{CYAN}========================================{RESET}")
-    
-    phone = input(f"{YELLOW}ใส่เบอร์โทรศัพท์เพื่อทดสอบ: {RESET}")
-    phone = clean_phone(phone)
-    
+
+    phone = clean_phone(input(f"{YELLOW}ใส่เบอร์โทรศัพท์เพื่อทดสอบ: {RESET}"))
+
     if len(phone) != 10:
         print(f"{RED}เบอร์โทรไม่ถูกต้อง!{RESET}")
         return
 
-    print(f"\n{YELLOW}[*] กำลังเริ่มทดสอบ {len(API_CONFIG)} APIs...{RESET}\n")
+    print(f"\n{YELLOW}[*] กำลังเริ่มทดสอบ {len(API_CONFIG)} APIs...\n{RESET}")
 
-    active_count = 0
-    dead_count = 0
+    summary = {
+        "PASS": 0,
+        "RATE_LIMIT": 0,
+        "BLOCKED": 0,
+        "SOFT_BLOCK": 0,
+        "ENDPOINT": 0,
+        "SERVER": 0,
+        "NETWORK": 0,
+        "UNKNOWN": 0
+    }
 
     with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = []
-        # วนลูป API ทั้งหมดจาก API_LIST
-        for key, val in API_CONFIG.items():
-            futures.append(executor.submit(run_test, key, val, phone))
-        
-        for future in futures:
-            if future.result():
-                active_count += 1
-            else:
-                dead_count += 1
+        futures = [
+            executor.submit(run_test, api, phone)
+            for api in API_CONFIG.values()
+        ]
+
+        for future in as_completed(futures):
+            r = future.result()
+            print_result(r)
+            summary[r["result"]] += 1
 
     print(f"\n{CYAN}========================================{RESET}")
-    print(f"ผลการทดสอบ:")
-    print(f"{GREEN}ใช้งานได้ (Active): {active_count}{RESET}")
-    print(f"{RED}ใช้งานไม่ได้ (Dead): {dead_count}{RESET}")
+    print("สรุปผลการทดสอบ:")
+    for k, v in summary.items():
+        if v:
+            print(f"- {k:<10}: {v}")
     print(f"{CYAN}========================================{RESET}")
 
 if __name__ == "__main__":
