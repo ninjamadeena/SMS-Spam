@@ -3,4 +3,4 @@ phonenumbers
 requests
 fake-useragent
 aiohttp
-
+colorama
