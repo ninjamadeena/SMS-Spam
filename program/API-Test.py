@@ -1,171 +1,172 @@
+# -*- coding: utf-8 -*-
 import requests
 import time
+import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from API_LIST import API_CONFIG
 
-# =========================
-# Color (optional)
-# =========================
+# ==========================================
+# 🎨 COLOR & STYLE SYSTEM
+# ==========================================
 try:
     from colorama import Fore, Style, init
     init(autoreset=True)
-    GREEN = Fore.GREEN
-    RED = Fore.RED
-    YELLOW = Fore.YELLOW
-    CYAN = Fore.CYAN
-    MAGENTA = Fore.MAGENTA
-    RESET = Style.RESET_ALL
+    C_GREEN = Fore.GREEN + Style.BRIGHT
+    C_RED = Fore.RED + Style.BRIGHT
+    C_YELLOW = Fore.YELLOW + Style.BRIGHT
+    C_CYAN = Fore.CYAN + Style.BRIGHT
+    C_BLUE = Fore.BLUE + Style.BRIGHT
+    C_MAGENTA = Fore.MAGENTA + Style.BRIGHT
+    C_WHITE = Fore.WHITE + Style.DIM
+    C_RESET = Style.RESET_ALL
 except ImportError:
-    GREEN = RED = YELLOW = CYAN = MAGENTA = RESET = ""
+    C_GREEN = C_RED = C_YELLOW = C_CYAN = C_BLUE = C_MAGENTA = C_WHITE = C_RESET = ""
 
-# =========================
-# Utils
-# =========================
+# ==========================================
+# 🛠️ UTILS
+# ==========================================
 def clean_phone(phone: str) -> str:
     phone = "".join(filter(str.isdigit, phone.strip()))
-    if phone.startswith("+66"):
-        return "0" + phone[3:]
-    if phone.startswith("66"):
-        return "0" + phone[2:]
+    if phone.startswith("+66"): return "0" + phone[3:]
+    if phone.startswith("66"): return "0" + phone[2:]
     return phone
 
-# =========================
-# Response Classifier
-# =========================
-def classify_response(status: int, text: str) -> str:
-    t = (text or "").lower()
+def format_json(text):
+    """จัด Format JSON ให้สวยงาม อ่านง่าย"""
+    try:
+        obj = json.loads(text)
+        return json.dumps(obj, indent=4, ensure_ascii=False)
+    except:
+        return text.strip()
 
-    # Success
+# ==========================================
+# 🧠 CORE LOGIC
+# ==========================================
+def analyze_status(status, text):
+    text_lower = text.lower()
+    
     if status in (200, 201):
-        if any(k in t for k in ["otp", "success", "sent", "ส่งแล้ว"]):
-            return "PASS"
-        if any(k in t for k in ["limit", "too many", "rate"]):
-            return "RATE_LIMIT"
-        if any(k in t for k in ["block", "forbidden", "denied"]):
-            return "BLOCKED"
-        return "SOFT_BLOCK"   # 200 แต่ไม่ส่งจริง
+        # 200 แต่เนื้อหาบอกว่า Error
+        if any(k in text_lower for k in ['error', 'fail', 'denied', 'limit', 'not success', 'ref.3', 'wait']):
+            return "SOFT BLOCK", C_YELLOW
+        # 200 ปกติ
+        if any(k in text_lower for k in ['success', 'true', 'sent', 'otp', 'code":200', 'code":1']):
+            return "PASS", C_GREEN
+        # กรณี Fun24 ตอบกลับมาเป็น [] ว่างๆ
+        if text.strip() == "[]":
+            return "PASS (Empty)", C_GREEN
+        
+        return "UNKNOWN 200", C_BLUE
 
-    # Client errors
-    if status == 429:
-        return "RATE_LIMIT"
-    if status in (401, 403):
-        return "BLOCKED"
-    if status in (404, 405):
-        return "ENDPOINT"
+    if status == 429: return "RATE LIMIT", C_YELLOW
+    if status in (403, 401): return "BLOCKED IP", C_RED
+    if status == 400: return "BAD REQUEST", C_RED
+    if status == 404: return "NOT FOUND", C_WHITE
+    if status >= 500: return "SERVER ERR", C_RED
+    
+    return f"STATUS {status}", C_RED
 
-    # Server errors
-    if status >= 500:
-        return "SERVER"
-
-    return "UNKNOWN"
-
-# =========================
-# Single API Test
-# =========================
-def run_test(api_data: dict, phone: str) -> dict:
+def run_test_detailed(api_data, phone):
     name = api_data["name"]
     start = time.time()
-
+    
+    # เตรียมข้อมูล (Capture Payload เพื่อแสดงผล)
     url = api_data["url"].format(phone=phone) if "{phone}" in api_data["url"] else api_data["url"]
     headers = api_data["headers"]() if api_data.get("headers") else {}
-    payload = api_data["data"](phone) if api_data.get("data") else None
-
+    payload_data = api_data["data"](phone) if api_data.get("data") else None
+    
     try:
-        kwargs = {
-            "headers": headers,
-            "timeout": 10
-        }
-        if isinstance(payload, dict):
-            kwargs["json"] = payload
-        elif isinstance(payload, str):
-            kwargs["data"] = payload
+        kwargs = {"headers": headers, "timeout": 8}
+        if isinstance(payload_data, dict):
+            kwargs["json"] = payload_data
+            sent_type = "JSON"
+        elif isinstance(payload_data, str):
+            kwargs["data"] = payload_data
+            sent_type = "DATA"
+        else:
+            sent_type = "NONE"
 
+        # ยิง !!!
         resp = requests.request(api_data["method"], url, **kwargs)
         latency = int((time.time() - start) * 1000)
-
-        result = classify_response(resp.status_code, resp.text)
-
+        
+        # วิเคราะห์ผล
+        tag, color = analyze_status(resp.status_code, resp.text)
+        
         return {
             "name": name,
-            "status": resp.status_code,
             "latency": latency,
-            "result": result
+            "tag": tag,
+            "color": color,
+            "sent_type": sent_type,
+            "payload": payload_data,
+            "response": format_json(resp.text)
         }
 
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         return {
             "name": name,
-            "status": None,
-            "latency": None,
-            "result": "NETWORK",
-            "error": str(e)[:40]
+            "latency": 0,
+            "tag": "NETWORK ERR",
+            "color": C_RED,
+            "sent_type": "ERR",
+            "payload": None,
+            "response": str(e)
         }
 
-# =========================
-# Pretty Print
-# =========================
-def print_result(r: dict):
-    color = {
-        "PASS": GREEN,
-        "RATE_LIMIT": YELLOW,
-        "BLOCKED": RED,
-        "SOFT_BLOCK": MAGENTA,
-        "ENDPOINT": CYAN,
-        "SERVER": RED,
-        "NETWORK": RED,
-        "UNKNOWN": MAGENTA
-    }.get(r["result"], "")
+# ==========================================
+# 🖥️ DISPLAY (THE BEAUTIFUL PART)
+# ==========================================
+def print_card(r):
+    # เส้นขอบ
+    BORDER = f"{C_WHITE}" + "-"*65 + f"{C_RESET}"
+    
+    # Header ส่วนบน: [STATUS] API Name (Ping)
+    print(BORDER)
+    print(f" {r['color']}● [{r['tag']:^12}] {C_CYAN}{r['name']:<20} {C_WHITE}({r['latency']}ms){C_RESET}")
+    print(BORDER)
+    
+    # ส่วน Payload (สิ่งที่เราส่งไป) - เฉพาะถ้ามีของส่งไป
+    if r['payload']:
+        print(f" {C_BLUE}📤 SENT ({r['sent_type']}):{C_RESET}")
+        payload_str = json.dumps(r['payload'], ensure_ascii=False) if isinstance(r['payload'], dict) else str(r['payload'])
+        # ตัดคำถ้าส่งยาวเกิน
+        if len(payload_str) > 80: payload_str = payload_str[:80] + "..."
+        print(f"    {C_WHITE}{payload_str}{C_RESET}")
+        print(f"{C_WHITE}   . . . . . . . . . . . . . . . . . . . . . . . . . . . . .{C_RESET}")
 
-    status = r["status"] if r["status"] is not None else "--"
-    ping = f"{r['latency']}ms" if r["latency"] is not None else "--"
+    # ส่วน Response (สิ่งที่ตอบกลับมา) - หัวใจสำคัญ
+    print(f" {C_MAGENTA}📥 RECEIVED:{C_RESET}")
+    # Indent บรรทัดให้สวย
+    formatted_resp = "\n".join(["    " + line for line in r['response'].split('\n')])
+    print(f"{C_GREEN if 'PASS' in r['tag'] else C_WHITE}{formatted_resp}{C_RESET}")
+    print("\n") # เว้นบรรทัดระหว่างการ์ด
 
-    print(f"{color}[{r['result']:<10}]{RESET} {r['name']:<15} | Ping: {ping:<6} | Status: {status}")
-
-# =========================
-# Main
-# =========================
 def main():
-    print(f"{CYAN}========================================{RESET}")
-    print(f"{CYAN}       SMS API DIAGNOSTIC TOOL          {RESET}")
-    print(f"{CYAN}       By: Ninja System                 {RESET}")
-    print(f"{CYAN}========================================{RESET}")
+    print(f"🔥 API TEST 🔥\n")
+    phone = clean_phone(input(f"{C_YELLOW}🎯 Enter Target Phone: {C_RESET}"))
+    if len(phone) != 10: return
 
-    phone = clean_phone(input(f"{YELLOW}ใส่เบอร์โทรศัพท์เพื่อทดสอบ: {RESET}"))
+    print(f"\n{C_WHITE}[*] Initializing scan on {len(API_CONFIG)} endpoints...{C_RESET}\n")
 
-    if len(phone) != 10:
-        print(f"{RED}เบอร์โทรไม่ถูกต้อง!{RESET}")
-        return
-
-    print(f"\n{YELLOW}[*] กำลังเริ่มทดสอบ {len(API_CONFIG)} APIs...\n{RESET}")
-
-    summary = {
-        "PASS": 0,
-        "RATE_LIMIT": 0,
-        "BLOCKED": 0,
-        "SOFT_BLOCK": 0,
-        "ENDPOINT": 0,
-        "SERVER": 0,
-        "NETWORK": 0,
-        "UNKNOWN": 0
-    }
+    summary = {"PASS": 0, "FAIL": 0, "WAIT": 0}
 
     with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [
-            executor.submit(run_test, api, phone)
-            for api in API_CONFIG.values()
-        ]
-
+        futures = [executor.submit(run_test_detailed, api, phone) for api in API_CONFIG.values()]
+        
         for future in as_completed(futures):
             r = future.result()
-            print_result(r)
-            summary[r["result"]] += 1
+            print_card(r)
+            
+            # นับคะแนนสรุป
+            if "PASS" in r['tag']: summary["PASS"] += 1
+            elif "LIMIT" in r['tag'] or "SOFT" in r['tag']: summary["WAIT"] += 1
+            else: summary["FAIL"] += 1
 
-    print(f"\n{CYAN}========================================{RESET}")
-    print("สรุปผลการทดสอบ:")
-    for k, v in summary.items():
-        if v:
-            print(f"- {k:<10}: {v}")
-    print(f"{CYAN}========================================{RESET}")
+    print(f"{C_CYAN}================================================================={C_RESET}")
+    print(f"  🏁 SUMMARY REPORT")
+    print(f"  {C_GREEN}✅ SUCCESS: {summary['PASS']}   {C_YELLOW}⚠️ WARNING: {summary['WAIT']}   {C_RED}❌ DEAD/BLOCK: {summary['FAIL']}{C_RESET}")
+    print(f"{C_CYAN}================================================================={C_RESET}")
 
 if __name__ == "__main__":
     main()
