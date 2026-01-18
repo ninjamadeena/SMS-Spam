@@ -16,7 +16,6 @@ def get_common_headers(referer=None, origin=None, content_type="application/json
         headers["Content-Type"] = content_type
     return headers
 
-# รวม API ทั้งหมด 26 ตัว
 API_CONFIG = {
     "api1": {
         "name": "Gogo-Shop",
@@ -64,7 +63,8 @@ API_CONFIG = {
         "method": "POST",
         "headers": lambda: get_common_headers("https://www.joneslot.me/pussy888/register", "https://www.joneslot.me", "application/x-www-form-urlencoded; charset=UTF-8"),
         "data": lambda p: f"phone={p}",
-        "success_check": lambda r: '"status":"success"' in r
+        # Log แสดง errorCode: 0 คือสำเร็จ
+        "success_check": lambda r: '"errorCode":0' in r.replace(" ","") or '"status":"success"' in r
     },
     "api7": {
         "name": "Swin168",
@@ -72,7 +72,7 @@ API_CONFIG = {
         "method": "POST",
         "headers": lambda: get_common_headers("https://play.swin168.me/register/", "https://play.swin168.me"),
         "data": lambda p: {"phone": p, "agent_id": 1, "country_code": "TH"},
-        "success_check": lambda r: True # เช็ค status code เอา
+        "success_check": lambda r: '"success"' in r
     },
     "api8": {
         "name": "Johnwick168",
@@ -80,7 +80,8 @@ API_CONFIG = {
         "method": "POST",
         "headers": lambda: get_common_headers("https://www.johnwick168.me/signup.php", "https://www.johnwick168.me", "application/x-www-form-urlencoded; charset=UTF-8"),
         "data": lambda p: f"act=step-1&tel={p}",
-        "success_check": lambda r: True
+        # แก้ไข: ถ้าเจอ err-captcha แปลว่า fail, ถ้าไม่มี err อาจจะ pass
+        "success_check": lambda r: 'err-' not in r and len(r) > 0
     },
     "api9": {
         "name": "Skyslot7",
@@ -88,7 +89,8 @@ API_CONFIG = {
         "method": "POST",
         "headers": lambda: get_common_headers("https://skyslot7.me/member/register", "https://skyslot7.me", "application/x-www-form-urlencoded; charset=UTF-8"),
         "data": lambda p: f"phone={p}",
-        "success_check": lambda r: '"status":"success"' in r
+        # Log แสดง errorCode: 0 คือสำเร็จ
+        "success_check": lambda r: '"errorCode":0' in r.replace(" ","") or '"status":"success"' in r
     },
     "api10": {
         "name": "Mgi88",
@@ -104,7 +106,7 @@ API_CONFIG = {
         "method": "POST",
         "headers": lambda: get_common_headers("https://play.dee.casino/register", "https://play.dee.casino"),
         "data": lambda p: {"phone": p, "agent_id": 1, "country_code": "TH"},
-        "success_check": lambda r: True
+        "success_check": lambda r: '"success"' in r or '"status":true' in r
     },
     "api12": {
         "name": "Mgame666",
@@ -112,7 +114,8 @@ API_CONFIG = {
         "method": "POST",
         "headers": lambda: get_common_headers("https://okmega.pgm77.com/", "https://okmega.pgm77.com"),
         "data": lambda p: {"Phone": p},
-        "success_check": lambda r: True
+        # ถ้า data: null มักจะ fail
+        "success_check": lambda r: '"data":null' not in r
     },
     "api13": {
         "name": "Prompkai",
@@ -120,7 +123,8 @@ API_CONFIG = {
         "method": "POST",
         "headers": lambda: get_common_headers("https://www.prompkai.com/", "https://www.prompkai.com"),
         "data": lambda p: {"username": p},
-        "success_check": lambda r: '"error":false' in r
+        # Log แสดง error: false คือสำเร็จ
+        "success_check": lambda r: '"error":false' in r.replace(" ", "")
     },
     "api14": {
         "name": "Fun24",
@@ -128,7 +132,7 @@ API_CONFIG = {
         "method": "POST",
         "headers": lambda: get_common_headers("https://www.fun24.bet/", "https://www.fun24.bet", "application/x-www-form-urlencoded"),
         "data": lambda p: f"phoneNumber={p}",
-        "success_check": lambda r: True
+        "success_check": lambda r: r.strip() == "[]" or '"success":true' in r
     },
     "api15": {
         "name": "Wm78bet",
@@ -136,7 +140,7 @@ API_CONFIG = {
         "method": "POST",
         "headers": lambda: get_common_headers("https://wm78bet.bet/", "https://wm78bet.bet", "application/x-www-form-urlencoded"),
         "data": lambda p: f"phoneNumber={p}",
-        "success_check": lambda r: True
+        "success_check": lambda r: r.strip() == "[]"
     },
     "api16": {
         "name": "Happy168",
@@ -160,7 +164,7 @@ API_CONFIG = {
         "method": "POST",
         "headers": lambda: get_common_headers("https://www.aplusfun.bet/", "https://www.aplusfun.bet", "application/x-www-form-urlencoded"),
         "data": lambda p: f"phoneNumber={p}",
-        "success_check": lambda r: True
+        "success_check": lambda r: r.strip() == "[]"
     },
     "api19": {
         "name": "Cueu77778887",
@@ -168,7 +172,8 @@ API_CONFIG = {
         "method": "POST",
         "headers": lambda: {"User-Agent": ua.random, "Origin": "https://lcbet44.electrikora.com", "Referer": "https://lcbet44.electrikora.com/", "X-Exp-Signature": "62b3e4c0138d8500127860d5", "Content-Type": "application/json"},
         "data": lambda p: {"brands_id": "62b3e4c0138d8500127860d5", "tel": p, "token": "", "captcha_id": "", "lot_number": "", "pass_token": "", "gen_time": "", "captcha_output": ""},
-        "success_check": lambda r: '"message":"ดำเนินการสำเร็จ"' in r
+        # Log ภาษาไทย
+        "success_check": lambda r: "ดำเนินการสำเร็จ" in r
     },
     "api20": {
         "name": "Oneforbet",
