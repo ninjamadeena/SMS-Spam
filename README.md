@@ -18,7 +18,7 @@ This tool is for **educational purposes only**. The developer is not responsible
 ![Demo Screenshot](example.jpg)
 ## 📥 วิธีติดตั้งใน termux
 ```
-pkg install git -y && git clone https://github.com/ninjamadeena/SMS-Spam.git && cd SMS-Spam && bash install-termux.sh && cd
+cd && pkg install git -y && git clone https://github.com/ninjamadeena/SMS-Spam.git && cd SMS-Spam && bash install-termux.sh && cd
 ```
 ## รันใช้
 ```
