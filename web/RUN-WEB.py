@@ -110,10 +110,10 @@ def open_browser():
         print(f"[*] เปิดเว็บอัตโนมัติ: {url}")
 
 if __name__ == "__main__":
-    # ตั้งเวลาให้รันฟังก์ชัน open_browser หลังจาก Server เริ่มไปแล้ว 1.5 วินาที
+    # ตั้งเวลาให้รันฟังก์ชัน open_browser หลังจาก Server เริ่มไปแล้ว 0.5 วินาที
     # ต้องใช้ Timer เพราะ app.run() มันจะบล็อกการทำงานบรรทัดต่อๆ ไป
     if os.environ.get('WERKZEUG_RUN_MAIN') != 'true': # ป้องกันการเปิดซ้ำเวลา Auto-reload ทำงาน
-        threading.Timer(1.5, open_browser).start()
+        threading.Timer(0.5, open_browser).start()
     
     app.run(host="0.0.0.0", port=8080, debug=True)
     
