@@ -4,19 +4,18 @@ import subprocess
 import threading
 import os
 import sys
+import webbrowser  # [เพิ่ม] สำหรับเปิดเว็บใน Windows/PC
+import time        # [เพิ่ม] สำหรับหน่วงเวลา
 
 app = Flask(__name__)
 
 # ตัวแปร Global สำหรับเก็บ Log
 output_logs = []
 
-# โฟลเดอร์ปัจจุบัน (ตำแหน่ง RUN-WEB.py)
+# โฟลเดอร์ปัจจุบัน
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# โฟลเดอร์ program ที่อยู่ระดับบน
 PROGRAM_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "program"))
 
-# ฟังก์ชันสร้าง path ของไฟล์ SMS
 def get_script_path(mode):
     if mode == "fast":
         filename = "SMS-Fast.py"
@@ -24,7 +23,6 @@ def get_script_path(mode):
         filename = "SMS-Super.py"
     else:
         filename = "SMS-Slow.py"
-    
     return os.path.join(PROGRAM_DIR, filename)
 
 def run_script(script_path, phone, count):
@@ -34,7 +32,6 @@ def run_script(script_path, phone, count):
         output_logs.append(f"[*] เริ่มรันไฟล์: {script_path}")
         output_logs.append(f"[*] เป้าหมายเบอร์: {phone}, จำนวน: {count}")
 
-        # ใช้ python interpreter ตัวเดียวกับที่รัน Flask อยู่
         process = subprocess.Popen(
             [sys.executable, "-u", script_path],
             stdin=subprocess.PIPE,
@@ -42,10 +39,9 @@ def run_script(script_path, phone, count):
             stderr=subprocess.PIPE,
             text=True,
             bufsize=1,
-            cwd=PROGRAM_DIR # กำหนด path การรันให้อยู่ใน folder program เพื่อให้ import API_LIST ได้ชัวร์ๆ
+            cwd=PROGRAM_DIR
         )
 
-        # ส่ง input เข้าไฟล์ Python (เบอร์ และ จำนวน)
         try:
             input_str = f"{phone}\n{count}\n"
             process.stdin.write(input_str)
@@ -53,7 +49,6 @@ def run_script(script_path, phone, count):
         except Exception as e:
             output_logs.append(f"[!] Error sending input: {e}")
 
-        # อ่าน output แบบ real-time
         while True:
             line = process.stdout.readline()
             if not line and process.poll() is not None:
@@ -61,7 +56,6 @@ def run_script(script_path, phone, count):
             if line:
                 output_logs.append(line.strip())
 
-        # อ่าน error ถ้ามี
         stderr = process.stderr.read()
         if stderr:
             output_logs.append(f"[!] Error: {stderr}")
@@ -71,11 +65,9 @@ def run_script(script_path, phone, count):
     except Exception as e:
         output_logs.append(f"[!] System Error: {e}")
 
-
 @app.route("/")
 def index():
     return render_template("index.html")
-
 
 @app.route("/run", methods=["POST"])
 def run():
@@ -87,21 +79,41 @@ def run():
     if not phone or not count:
         return jsonify({"status": "error", "message": "ต้องใส่ข้อมูลให้ครบ!"})
 
-    # หา path ของไฟล์ให้ถูกตามโหมด
     script_path = get_script_path(mode)
 
     if not os.path.exists(script_path):
-        return jsonify({"status": "error", "message": f"ไม่พบไฟล์ {script_path} \n(กรุณาเช็คว่ามีไฟล์ SMS-SUPER.py ในโฟลเดอร์ program หรือยัง)"})
+        return jsonify({"status": "error", "message": f"ไม่พบไฟล์ {script_path} \n(กรุณาเช็คว่ามีไฟล์ในโฟลเดอร์ program หรือยัง)"})
 
     threading.Thread(target=run_script, args=(script_path, phone, count)).start()
 
     return jsonify({"status": "success", "message": f"เริ่มรันโหมด {mode.upper()} แล้ว!"})
 
-
 @app.route("/get_logs")
 def get_logs():
     return jsonify(output_logs)
 
+# [เพิ่ม] ฟังก์ชันเปิดเว็บอัตโนมัติ
+def open_browser():
+    url = "http://127.0.0.1:8080"
+    
+    # เช็คว่าเป็น Termux หรือไม่ (เช็คจากตัวแปร Environment ของ Android)
+    if "ANDROID_ROOT" in os.environ:
+        try:
+            # คำสั่งสำหรับ Termux
+            subprocess.run(["termux-open-url", url])
+            print(f"[*] เปิดเว็บอัตโนมัติใน Termux: {url}")
+        except FileNotFoundError:
+            print("[!] ไม่พบคำสั่ง termux-open-url (ลองพิมพ์ pkg install termux-tools)")
+    else:
+        # สำหรับ Windows / macOS / Linux ทั่วไป
+        webbrowser.open(url)
+        print(f"[*] เปิดเว็บอัตโนมัติ: {url}")
 
 if __name__ == "__main__":
+    # ตั้งเวลาให้รันฟังก์ชัน open_browser หลังจาก Server เริ่มไปแล้ว 1.5 วินาที
+    # ต้องใช้ Timer เพราะ app.run() มันจะบล็อกการทำงานบรรทัดต่อๆ ไป
+    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true': # ป้องกันการเปิดซ้ำเวลา Auto-reload ทำงาน
+        threading.Timer(1.5, open_browser).start()
+    
     app.run(host="0.0.0.0", port=8080, debug=True)
+    
