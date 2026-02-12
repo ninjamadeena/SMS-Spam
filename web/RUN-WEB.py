@@ -4,8 +4,8 @@ import subprocess
 import threading
 import os
 import sys
-import webbrowser  # [เพิ่ม] สำหรับเปิดเว็บใน Windows/PC
-import time        # [เพิ่ม] สำหรับหน่วงเวลา
+import webbrowser
+import time
 
 app = Flask(__name__)
 
@@ -92,28 +92,21 @@ def run():
 def get_logs():
     return jsonify(output_logs)
 
-# [เพิ่ม] ฟังก์ชันเปิดเว็บอัตโนมัติ
+# ฟังก์ชันเปิดเว็บอัตโนมัติ
 def open_browser():
     url = "http://127.0.0.1:8080"
-    
-    # เช็คว่าเป็น Termux หรือไม่ (เช็คจากตัวแปร Environment ของ Android)
     if "ANDROID_ROOT" in os.environ:
         try:
-            # คำสั่งสำหรับ Termux
             subprocess.run(["termux-open-url", url])
             print(f"[*] เปิดเว็บอัตโนมัติใน Termux: {url}")
         except FileNotFoundError:
             print("[!] ไม่พบคำสั่ง termux-open-url (ลองพิมพ์ pkg install termux-tools)")
     else:
-        # สำหรับ Windows / macOS / Linux ทั่วไป
         webbrowser.open(url)
         print(f"[*] เปิดเว็บอัตโนมัติ: {url}")
 
 if __name__ == "__main__":
-    # ตั้งเวลาให้รันฟังก์ชัน open_browser หลังจาก Server เริ่มไปแล้ว 0.5 วินาที
-    # ต้องใช้ Timer เพราะ app.run() มันจะบล็อกการทำงานบรรทัดต่อๆ ไป
-    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true': # ป้องกันการเปิดซ้ำเวลา Auto-reload ทำงาน
-        threading.Timer(0.5, open_browser).start()
-    
+    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
+        threading.Timer(0.1, open_browser).start()
+# กำหนด ip และ port
     app.run(host="0.0.0.0", port=8080, debug=True)
-    
