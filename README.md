@@ -15,7 +15,7 @@
 This tool is for **educational purposes only**. The developer is not responsible for any misuse or damage caused by this program.
 
 ## 🖼️ ภาพตัวอย่าง
-![Demo Screenshot](example.jpg)
+![Demo Screenshot](assets/example.jpg)
 ## 📥 วิธีติดตั้งใน termux
 ```
 cd && pkg install git -y && git clone https://github.com/ninjamadeena/SMS-Spam.git && cd SMS-Spam && bash install-termux.sh && cd
