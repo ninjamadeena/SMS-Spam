@@ -1,5 +1,5 @@
 TARGET="$PREFIX/bin/RUN-SMS-WEB"
-SOURCE="SMS-RUN-WEB-TERMUX.sh"
+SOURCE="setup/SMS-RUN-WEB-TERMUX.sh"
 
 echo กําลังอัปเดต...
 sleep 1
@@ -24,16 +24,14 @@ else
 fi
 echo กําลังอัปเดตจาก requirements.txt
 
-pip install -r requirements.txt
+pip install -r setup/requirements.txt
 
 echo "[*] กำลังติดตั้งคำสั่ง RUN-SMS-WEB ..."
 mv "$SOURCE" "$TARGET"
 chmod +x "$TARGET"
 echo "[OK] ติดตั้งคำสั่ง RUN-SMS-WEB สำเร็จ!"
 echo "[*] ลบไฟล์ติดตั้ง..."
-rm -f install-termux.sh
-rm -f requirements.txt
-rm -f README.md
-rm -f example.jpg
+rm -rf setup
+rm -rf assets
 echo "[OK] ลบไฟล์ติดตั้งเรียบร้อย!"
 echo อัปเดตเสร็จแล้ว
