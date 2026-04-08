@@ -26,9 +26,8 @@ REMOTE=$(git rev-parse @{u})
 if [ "$LOCAL" != "$REMOTE" ]; then
     echo "⚠️  พบเวอร์ชันใหม่! (New Update Found)"
     echo "🚀 ระบบกำลังทำการอัปเดตอัตโนมัติ..."
-    sleep 2
     
-    # เรียกใช้ไฟล์ update.py ใน folder program
+    # เรียกใช้ไฟล์ update.sh ใน folder program
     if [ -f "program/update.sh" ]; then
         bash program/update.sh
         
@@ -46,7 +45,6 @@ fi
 # ==========================================
 # ▶️ ส่วนรันโปรแกรม (RUN WEB SERVER)
 # ==========================================
-sleep 1
 echo "🚀 Starting SMS-Spam Web Server..."
 cd web || exit
 python RUN-WEB.py
