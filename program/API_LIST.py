@@ -22,9 +22,6 @@ def get_common_headers(referer=None, origin=None, content_type="application/json
     return headers
 
 API_CONFIG = {
-    # ==========================================
-    # ORIGINAL LIST (api1 - api26)
-    # ==========================================
     "api1": {
         "name": "Gogo-Shop",
         "url": "https://gogo-shop.com/app/index/send_sms",
@@ -236,11 +233,6 @@ API_CONFIG = {
         "data": lambda p: {"phone_number": p, "register_type": ""},
         "success_check": lambda r: '"success"' in r
     },
-
-    # ==========================================
-    # IMPORTED ALL FROM api-sms (1).py
-    # ==========================================
-
     "api27": {
         "name": "Carsome",
         "url": "https://www.carsome.co.th/website/login/sendSMS",
